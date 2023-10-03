@@ -11,12 +11,20 @@ int main(int argc, char* argv[])
 	std::cin >> c;
 	std::cin >> d;
 	if (a == b && a == 0)
+	{
 		std::cout << "IMF";
+	}
 	else if (a == 0 || b % a != 0 || a * d == b * c || c == 0 && d == 0)
+	{
 		std::cout << "NO";
+	}
 	else if ((-b) % a == 0)
+	{
 		std::cout << -b / a << std::endl;
+	}
 	else
+	{
 		std::cout << "NO";
+	}
 	return 0;
 }
