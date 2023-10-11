@@ -38,6 +38,8 @@ int main(int*, char**)
     {
         std::cout << *(b + i) << " ";
     }
+    free(a);
+    free(b);
 
     return 0;
 }

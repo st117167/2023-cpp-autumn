@@ -7,14 +7,15 @@ int main(int, char**)
 
 	int* a = (int*)malloc(sizeof(int) * n);
 
-	int k = 0;
 	for (int i = 0; i < n; i = i + 1)
 	{
 		std::cin >> *(a + i);
-		if (*(a + i) > 0)
-			k = k + 1;
+		if (i % 2 != 0)
+		{
+			std::cout << *(a + i) << " ";
+		}
 	}
+	free(a);
 
-	std::cout << k;
 	return 0;
 }

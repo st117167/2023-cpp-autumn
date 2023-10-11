@@ -10,11 +10,10 @@ int main(int, char**)
 	for (int i = 0; i < n; i = i + 1)
 	{
 		std::cin >> *(a + i);
-		if (i % 2 != 0)
-		{
+		if (i % 2 == 0)
 			std::cout << *(a + i) << " ";
-		}
 	}
+	free(a);
 
 	return 0;
 }

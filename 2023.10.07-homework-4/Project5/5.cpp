@@ -11,9 +11,12 @@ int main(int, char**)
 	{
 		std::cin >> *(a + i);
 	}
+
 	for (int j = n - 1; j >= 0; j = j - 1) 
 	{
 		std::cout << *(a + j) << " ";
 	}
+	free(a);
+
 	return 0;
 }
