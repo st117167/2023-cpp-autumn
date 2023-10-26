@@ -5,7 +5,7 @@ int main(int*, char**)
     int n = 0;
     std::cin >> n;
 
-    int* a = (int*)malloc(sizeof(int) * n); // array
+    int* a = (int*)malloc(sizeof(int) * n);
 
     int k = 0;
     for (int i = 0; i < n; i = i + 1)
@@ -17,7 +17,7 @@ int main(int*, char**)
         }
     }
 
-    int* b = (int*)malloc(sizeof(int) * (n - k)); // creating array of positive numbers
+    int* b = (int*)malloc(sizeof(int) * (n - k));
 
     int h = 0;
     for (int i = 0; i < n; i = i + 1)

@@ -11,7 +11,9 @@ int main(int, char**)
 	{
 		std::cin >> *(a + i);
 		if (i % 2 == 0)
+		{
 			std::cout << *(a + i) << " ";
+		}
 	}
 	free(a);
 

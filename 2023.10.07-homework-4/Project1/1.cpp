@@ -12,7 +12,9 @@ int main(int, char**)
 	{
 		std::cin >> *(a + i);
 		if (*(a + i) > 0)
+		{
 			k = k + 1;
+		}
 	}
 	free(a);
 

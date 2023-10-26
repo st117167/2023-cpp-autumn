@@ -9,10 +9,10 @@ int main(int, char**)
 	int min = 0;
 	int* a = (int*)malloc(sizeof(int) * n);
 
-	max = -1000000; // huge number
-	min = 1000000; // small number
+	max = -1000000;
+	min = 1000000;
 	
-	for (int i = 0; i < n; i = i + 1) //search: max, min
+	for (int i = 0; i < n; i = i + 1)
 	{
 		std::cin >> *(a + i);
 
@@ -27,7 +27,7 @@ int main(int, char**)
 		}
 	}
 
-	for (int i = n - 1; i >= 0; i = i - 1) //replace: last max > min
+	for (int i = n - 1; i >= 0; i = i - 1)
 	{
 		if (*(a + i) == max)
 		{
@@ -36,7 +36,7 @@ int main(int, char**)
 		}
 	}
 
-	for (int i = 0; i < n; i = i + 1) //replace: first min > max
+	for (int i = 0; i < n; i = i + 1)
 	{
 		if (*(a + i) == min)
 		{
