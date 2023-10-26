@@ -14,7 +14,9 @@ int main(int argc, char* argv[])
 	for (x = 0; x <= 1000; x++)
 	{
 		if (a * x * x * x + b * x * x + c * x + d == 0)
+		{
 			std::cout << x << " ";
+		}
 	}
 	return 0;
 }

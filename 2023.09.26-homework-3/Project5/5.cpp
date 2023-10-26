@@ -23,7 +23,9 @@ int main(int argc, char* argv[])
 			s = s + e;
 		}
 		if (s == i)
+		{
 			k = k + 1;
+		}
 	}
 	std::cout << k;
 	return 0;
