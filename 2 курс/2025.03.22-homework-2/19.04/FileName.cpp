@@ -40,30 +40,25 @@ double parallel_integral_reduction() {
     return sum * h;
 }
 
-// Параллельная версия с явным разделением работы (аналог sections)
-template<int num_threads>
-double parallel_integral_divided() {
-    double sums[num_threads] = { 0.0 };
+// Параллельная версия с использованием parallel for без явного разделения
+double parallel_integral_parallel_for() {
+    double sum = 0.0;
 
-#pragma omp parallel num_threads(num_threads)
+#pragma omp parallel
     {
-        int thread_id = omp_get_thread_num();
-        int chunk_size = n / num_threads;
-        int start = thread_id * chunk_size;
-        int end = (thread_id == num_threads - 1) ? n : start + chunk_size;
+        double local_sum = 0.0;
 
-        for (int i = start; i < end; ++i) {
+#pragma omp for
+        for (int i = 0; i < n; ++i) {
             double x = a + (i + 0.5) * h;
-            sums[thread_id] += f(x);
+            local_sum += f(x);
         }
+
+#pragma omp atomic
+        sum += local_sum;
     }
 
-    double total_sum = 0.0;
-    for (int i = 0; i < num_threads; ++i) {
-        total_sum += sums[i];
-    }
-
-    return total_sum * h;
+    return sum * h;
 }
 
 int main() {
@@ -81,19 +76,12 @@ int main() {
     std::cout << "Parallel (reduction) integral value: " << integral_par_red << std::endl;
     std::cout << "Parallel (reduction) time: " << (end_time - start_time) * 1000 << " ms" << std::endl;
 
-    // Параллельная версия с 2 потоками
+    // Параллельная версия с parallel for
     start_time = omp_get_wtime();
-    double integral_par_2 = parallel_integral_divided<2>();
+    double integral_par_for = parallel_integral_parallel_for();
     end_time = omp_get_wtime();
-    std::cout << "Parallel (2 threads) integral value: " << integral_par_2 << std::endl;
-    std::cout << "Parallel (2 threads) time: " << (end_time - start_time) * 1000 << " ms" << std::endl;
-
-    // Параллельная версия с 4 потоками
-    start_time = omp_get_wtime();
-    double integral_par_4 = parallel_integral_divided<4>();
-    end_time = omp_get_wtime();
-    std::cout << "Parallel (4 threads) integral value: " << integral_par_4 << std::endl;
-    std::cout << "Parallel (4 threads) time: " << (end_time - start_time) * 1000 << " ms" << std::endl;
+    std::cout << "Parallel (parallel for) integral value: " << integral_par_for << std::endl;
+    std::cout << "Parallel (parallel for) time: " << (end_time - start_time) * 1000 << " ms" << std::endl;
 
     return 0;
 }

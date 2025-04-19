@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <omp.h>
+
 using namespace std;
 
 void print_array(double* arr, int n) {
@@ -26,35 +27,19 @@ int main() {
     for (int i = 0; i <= n; i++) {
         arr[i] = sin(i * step);
     }
-    cout << "Последовательная версия: " << (omp_get_wtime() - t) << endl;
-    //print_array(arr, n);
+    cout << "Последовательная версия: " << (omp_get_wtime() - t) << " секунд" << endl;
+    // print_array(arr, n);
 
-    // Параллельная версия с автоматическим распределением
-    t = omp_get_wtime();
-#pragma omp parallel for
-    for (int i = 0; i <= n; i++) {
-        arr[i] = sin(i * step);
+    // Параллельные версии
+    for (int num_threads : {1, 2, 4}) {
+        t = omp_get_wtime();
+#pragma omp parallel for num_threads(num_threads)
+        for (int i = 0; i <= n; i++) {
+            arr[i] = sin(i * step);
+        }
+        cout << "Параллельная версия (" << num_threads << " потоков): " << (omp_get_wtime() - t) << " секунд" << endl;
+        // print_array(arr, n);
     }
-    cout << "Параллельная версия (auto): " << (omp_get_wtime() - t) << endl;
-    //print_array(arr, n);
-
-    // Параллельная версия с 2 потоками
-    t = omp_get_wtime();
-#pragma omp parallel for num_threads(2)
-    for (int i = 0; i <= n; i++) {
-        arr[i] = sin(i * step);
-    }
-    cout << "Параллельная версия (2 потока): " << (omp_get_wtime() - t) << endl;
-    //print_array(arr, n);
-
-    // Параллельная версия с 4 потоками
-    t = omp_get_wtime();
-#pragma omp parallel for num_threads(4)
-    for (int i = 0; i <= n; i++) {
-        arr[i] = sin(i * step);
-    }
-    cout << "Параллельная версия (4 потока): " << (omp_get_wtime() - t) << endl;
-    //print_array(arr, n);
 
     delete[] arr;
     return EXIT_SUCCESS;
