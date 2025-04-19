@@ -2,45 +2,78 @@
 #include <cmath>
 #include <omp.h>
 
-double f(double x) {
-    return 1.0 / (1.0 + x * x);
+using namespace std;
+
+// Функция, которую нужно интегрировать
+double f(double x, double alpha, double beta) {
+    return 1.0 / (sqrt(1 - 2 * alpha * x + alpha * alpha) * sqrt(1 - 2 * beta * x + beta * beta));
 }
 
-// Функция для вычисления интеграла с помощью адаптивной квадратуры
-double adaptiveQuadrature(double (*func)(double), double a, double b, double epsilon) {
-    double mid = (a + b) / 2.0;
-    double h = b - a;
+// Метод трапеций для численного интегрирования
+double trapezoidal(double a, double b, int n, double alpha, double beta) {
+    double h = (b - a) / n;
+    double sum = 0.5 * (f(a, alpha, beta) + f(b, alpha, beta));
+    for (int i = 1; i < n; ++i) {
+        sum += f(a + i * h, alpha, beta);
+    }
+    return h * sum;
+}
 
-    // Вычисляем значения на краях и в середине
-    double I1 = h * (func(a) + func(b)) / 2.0; // Простая квадратура
-    double I2 = h * (func(a) + 4 * func(mid) + func(b)) / 6.0; // Улучшенная квадратура
 
-    // Проверяем, достигнута ли необходимая точность
-    if (fabs(I2 - I1) < epsilon) {
-        return I2; // Если да, возвращаем результат
+// Адаптивная квадратура
+double adaptiveQuadrature(double a, double b, double alpha, double beta, double tolerance, int maxDepth) {
+    double midpoint = (a + b) / 2.0;
+    double wholeArea = trapezoidal(a, b, 10, alpha, beta);  // Оценим площадь на грубом разбиении
+    double leftArea = trapezoidal(a, midpoint, 10, alpha, beta);
+    double rightArea = trapezoidal(midpoint, b, 10, alpha, beta);
+
+    if (abs(leftArea + rightArea - wholeArea) <= 3 * tolerance || maxDepth == 0) {
+        return leftArea + rightArea;
     }
     else {
-        // Иначе делим интервал пополам и рекурсивно вычисляем интеграл
-        double left = adaptiveQuadrature(func, a, mid, epsilon / 2);
-        double right = adaptiveQuadrature(func, mid, b, epsilon / 2);
-        return left + right; // Суммируем результаты
+#pragma omp task shared(leftArea)
+        {
+            leftArea = adaptiveQuadrature(a, midpoint, alpha, beta, tolerance / 2.0, maxDepth - 1);
+        }
+
+#pragma omp task shared(rightArea)
+        {
+            rightArea = adaptiveQuadrature(midpoint, b, alpha, beta, tolerance / 2.0, maxDepth - 1);
+        }
+
+#pragma omp taskwait
+        return leftArea + rightArea;
     }
+}
+
+// Функция для вычисления аналитического значения
+double analyticalSolution(double alpha, double beta) {
+    double rootAlphaBeta = sqrt(alpha * beta);
+    return (1.0 / rootAlphaBeta) * log((1 + rootAlphaBeta) / (1 - rootAlphaBeta));
 }
 
 int main() {
-    double a = 0.0; // Начало интервала
-    double b = 1.0; // Конец интервала
-    double epsilon = 1e-6; // Точность
+    double alpha = 0.5;
+    double beta = 0.7;
+    double a = -1.0;
+    double b = 1.0;
+    double tolerance = 1e-6;
+    int maxDepth = 10; // Ограничиваем глубину рекурсии
 
-    // Используем директиву task для распараллеливания
+    double result;
+
 #pragma omp parallel
     {
 #pragma omp single
         {
-            double result = adaptiveQuadrature(f, a, b, epsilon);
-            std::cout << "Интеграл от f(x) на интервале [" << a << ", " << b << "] = " << result << std::endl;
+            result = adaptiveQuadrature(a, b, alpha, beta, tolerance, maxDepth);
         }
     }
+
+    cout << "Численное значение интеграла: " << result << endl;
+    cout << "Аналитическое значение интеграла: " << analyticalSolution(alpha, beta) << endl;
+    cout << "Абсолютная погрешность: " << abs(result - analyticalSolution(alpha, beta)) << endl;
+
 
     return 0;
 }
