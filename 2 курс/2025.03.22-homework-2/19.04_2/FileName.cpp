@@ -1,46 +1,88 @@
-#define _USE_MATH_DEFINES
-#include <iostream>
+﻿#include <iostream>
 #include <cmath>
 #include <omp.h>
 
-using namespace std;
+const int n = 1e8;  // Количество разбиений
+double a = -1.0;     // Нижний предел интегрирования
+double b = 1.0;      // Верхний предел интегрирования
+double h = (b - a) / n;  // Шаг разбиения
 
-void print_array(double* arr, int n) {
-    cout << endl << endl;
-    for (int i = 0; i <= n; i++) {
-        cout << arr[i] << ' ';
+double alpha = 0.5;  // Параметр α
+double beta = 0.5;   // Параметр β
+
+// Функция подынтегрального выражения
+double f(double x) {
+    double term1 = sqrt(1 - 2 * alpha * x + alpha * alpha);
+    double term2 = sqrt(1 - 2 * beta * x + beta * beta);
+    return 1.0 / (term1 * term2);
+}
+
+// Последовательная версия (для проверки)
+double sequential_integral() {
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i) {
+        double x = a + (i + 0.5) * h;
+        sum += f(x);
     }
-    cout << endl;
+    return sum * h;
+}
+
+// Параллельная версия с разными типами планирования
+double parallel_integral(const char* schedule_type) {
+    double sum = 0.0;
+#pragma omp parallel for reduction(+: sum) schedule(runtime)
+    for (int i = 0; i < n; ++i) {
+        double x = a + (i + 0.5) * h;
+        sum += f(x);
+    }
+    return sum * h;
 }
 
 int main() {
-    setlocale(LC_ALL, "Russian");
+    // Последовательная версия (эталон)
+    double start_time = omp_get_wtime();
+    double integral_seq = sequential_integral();
+    double seq_time = omp_get_wtime() - start_time;
+    std::cout << "Sequential integral: " << integral_seq << std::endl;
+    std::cout << "Sequential time: " << seq_time * 1000 << " ms" << std::endl;
 
-    int n = 0; // ���������� ���������
-    cin >> n;
+    // Параллельные версии с разными типами планирования
+    double t_static, t_dynamic, t_guided;
+    double integral_static, integral_dynamic, integral_guided;
 
-    double* arr = new double[n + 1];
-    const double step = M_PI / (2 * n);
+    // Static
+    omp_set_schedule(omp_sched_static, 0);
+    start_time = omp_get_wtime();
+    integral_static = parallel_integral("static");
+    t_static = omp_get_wtime() - start_time;
+    std::cout << "\nStatic schedule:" << std::endl;
+    std::cout << "Integral: " << integral_static << std::endl;
+    std::cout << "Time: " << t_static * 1000 << " ms" << std::endl;
 
-    // ���������������� ������
-    double t = omp_get_wtime();
-    for (int i = 0; i <= n; i++) {
-        arr[i] = sin(i * step);
-    }
-    cout << "���������������� ������: " << (omp_get_wtime() - t) << " ������" << endl;
-    // print_array(arr, n);
+    // Dynamic
+    omp_set_schedule(omp_sched_dynamic, 1000);  // Чанк = 1000 итераций
+    start_time = omp_get_wtime();
+    integral_dynamic = parallel_integral("dynamic");
+    t_dynamic = omp_get_wtime() - start_time;
+    std::cout << "\nDynamic schedule:" << std::endl;
+    std::cout << "Integral: " << integral_dynamic << std::endl;
+    std::cout << "Time: " << t_dynamic * 1000 << " ms" << std::endl;
 
-    // ������������ ������
-    for (int num_threads : {1, 2, 4}) {
-        t = omp_get_wtime();
-#pragma omp parallel for num_threads(num_threads)
-        for (int i = 0; i <= n; i++) {
-            arr[i] = sin(i * step);
-        }
-        cout << "������������ ������ (" << num_threads << " �������): " << (omp_get_wtime() - t) << " ������" << endl;
-        // print_array(arr, n);
-    }
+    // Guided
+    omp_set_schedule(omp_sched_guided, 1000);  // Чанк уменьшается от 1000
+    start_time = omp_get_wtime();
+    integral_guided = parallel_integral("guided");
+    t_guided = omp_get_wtime() - start_time;
+    std::cout << "\nGuided schedule:" << std::endl;
+    std::cout << "Integral: " << integral_guided << std::endl;
+    std::cout << "Time: " << t_guided * 1000 << " ms" << std::endl;
 
-    delete[] arr;
-    return EXIT_SUCCESS;
+    // Проверка корректности
+    bool is_correct =
+        (fabs(integral_static - integral_seq) < 1e-10) &&
+        (fabs(integral_dynamic - integral_seq) < 1e-10) &&
+        (fabs(integral_guided - integral_seq) < 1e-10);
+    std::cout << "\nResults are " << (is_correct ? "CORRECT" : "INCORRECT") << std::endl;
+
+    return 0;
 }
